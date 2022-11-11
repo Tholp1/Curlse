@@ -9,20 +9,28 @@ ifndef verbose
 endif
 
 ifeq ($(config),debug)
+  jsoncpp_config = debug
   Curlse_config = debug
 
 else ifeq ($(config),release)
+  jsoncpp_config = release
   Curlse_config = release
 
 else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := Curlse
+PROJECTS := jsoncpp Curlse
 
 .PHONY: all clean help $(PROJECTS) 
 
 all: $(PROJECTS)
+
+jsoncpp:
+ifneq (,$(jsoncpp_config))
+	@echo "==== Building jsoncpp ($(jsoncpp_config)) ===="
+	@${MAKE} --no-print-directory -C build/jsoncpp -f Makefile config=$(jsoncpp_config)
+endif
 
 Curlse:
 ifneq (,$(Curlse_config))
@@ -31,6 +39,7 @@ ifneq (,$(Curlse_config))
 endif
 
 clean:
+	@${MAKE} --no-print-directory -C build/jsoncpp -f Makefile clean
 	@${MAKE} --no-print-directory -C . -f Curlse.make clean
 
 help:
@@ -43,6 +52,7 @@ help:
 	@echo "TARGETS:"
 	@echo "   all (default)"
 	@echo "   clean"
+	@echo "   jsoncpp"
 	@echo "   Curlse"
 	@echo ""
 	@echo "For more information, see https://github.com/premake/premake-core/wiki"

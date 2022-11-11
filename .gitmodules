@@ -1,6 +1,6 @@
-[submodule "libzippp"]
-    path = libzippp
-    url = https://github.com/ctabin/libzippp.git
+[submodule "libzip"]
+	path = libzip
+	url = https://github.com/nih-at/libzip.git
 [submodule "jsoncpp"]
-    path = jsoncpp
-    url = https://github.com/open-source-parsers/jsoncpp.git
+	path = jsoncpp
+	url = https://github.com/open-source-parsers/jsoncpp.git

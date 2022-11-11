@@ -1,20 +1,30 @@
 -- premake5.lua
 
-require "premake-vcpkg"
-os.execute("chmod +x ./.vcpkg/vcpkg.exe")
-os.execute("./.vcpkg/vcpkg.exe install jsoncpp")
-os.execute("./.vcpkg/vcpkg.exe install libzippp")
 
 
 workspace "Curlse"
    configurations { "Debug", "Release" }
+
+os.execute("cmake -S jsoncpp -B build/jsoncpp")
+os.execute("cmake -S libzip -B build/libzip")
+
+externalproject "jsoncpp"
+   location "build/jsoncpp"
+   kind "StaticLib"
+   language "C++"
+
+externalproject "libzip""
+   location "build/libzip"
+   kind "StaticLib"
+   language "C++"
 
 project "Curlse"
    kind "ConsoleApp"
    language "C++"
    targetdir "bin/%{cfg.buildcfg}"
 
-   files { "**.h", "**.cpp" }
+   files { "*.h", "*.cpp"}
+   includedirs {".", "jsoncpp/include"}
 
    filter "configurations:Debug"
       defines { "DEBUG" }
