@@ -2,8 +2,6 @@
 #include <iostream>
 #include <string>
 
-// probably a standard way to do this stuff & i dont care
-
 static std::string GetLastXChars(int chars, std::string stringin)
 {
     std::string out;
@@ -25,5 +23,14 @@ static std::string GetFirstXChars(int chars, std::string stringin)
     return out;
 };
 
+static std::string ReplaceChar(std::string stringin, char what, char with)
+{
+    for (char &x : stringin)
+    {
+        if (x == what)
+            x = with;
+    }
+    return stringin;
+}
 
 

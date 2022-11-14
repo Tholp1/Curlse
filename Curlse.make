@@ -19,11 +19,11 @@ endif
 # #############################################
 
 RESCOMP = windres
-INCLUDES += -I. -Ijsoncpp/include
+INCLUDES += -I. -Ijsoncpp/include -Ibuild/libzip -Ibuild/libzippp -Izlib
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-LIBS +=
+LIBS += -llibjsoncpp -llibzippp_static -llibzip -llibz
 LDDEPS +=
 LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
 define PREBUILDCMDS
@@ -38,18 +38,18 @@ TARGETDIR = bin/Debug
 TARGET = $(TARGETDIR)/Curlse
 OBJDIR = obj/Debug
 DEFINES += -DDEBUG
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g
-ALL_LDFLAGS += $(LDFLAGS)
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -Wzero-as-null-pointer-constant
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -Wzero-as-null-pointer-constant
+ALL_LDFLAGS += $(LDFLAGS) -Lbuild/jsoncpp/lib -Lbuild/libzippp -Lbuild/libzip/lib -Lzlib
 
 else ifeq ($(config),release)
 TARGETDIR = bin/Release
 TARGET = $(TARGETDIR)/Curlse
 OBJDIR = obj/Release
 DEFINES += -DNDEBUG
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2
-ALL_LDFLAGS += $(LDFLAGS) -s
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -Wzero-as-null-pointer-constant
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -Wzero-as-null-pointer-constant
+ALL_LDFLAGS += $(LDFLAGS) -Lbuild/jsoncpp/lib -Lbuild/libzippp -Lbuild/libzip/lib -Lzlib -s
 
 endif
 

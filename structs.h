@@ -36,10 +36,10 @@ public:
         else
             printf(".");
     }
-    ProgressPercent(int tasks = 100, float mintoupdate = 1.0f, char* message = "")
+    ProgressPercent(int tasks = 100, float mintoupdate = 1.0f, std::string message = "")
     {
         TasksTotal = tasks;
         MinToUpdate = mintoupdate;
-        printf("%s\n0%%\n", message);
+        printf("%s\n0%%\n", message.c_str());
     }
 };

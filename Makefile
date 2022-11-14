@@ -10,17 +10,23 @@ endif
 
 ifeq ($(config),debug)
   jsoncpp_config = debug
+  zlib_config = debug
+  libzip_config = debug
+  libzippp_config = debug
   Curlse_config = debug
 
 else ifeq ($(config),release)
   jsoncpp_config = release
+  zlib_config = release
+  libzip_config = release
+  libzippp_config = release
   Curlse_config = release
 
 else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := jsoncpp Curlse
+PROJECTS := jsoncpp zlib libzip libzippp Curlse
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -32,6 +38,24 @@ ifneq (,$(jsoncpp_config))
 	@${MAKE} --no-print-directory -C build/jsoncpp -f Makefile config=$(jsoncpp_config)
 endif
 
+zlib:
+ifneq (,$(zlib_config))
+	@echo "==== Building zlib ($(zlib_config)) ===="
+	@${MAKE} --no-print-directory -C zlib -f Makefile config=$(zlib_config)
+endif
+
+libzip:
+ifneq (,$(libzip_config))
+	@echo "==== Building libzip ($(libzip_config)) ===="
+	@${MAKE} --no-print-directory -C build/libzip -f Makefile config=$(libzip_config)
+endif
+
+libzippp:
+ifneq (,$(libzippp_config))
+	@echo "==== Building libzippp ($(libzippp_config)) ===="
+	@${MAKE} --no-print-directory -C build/libzippp -f Makefile config=$(libzippp_config)
+endif
+
 Curlse:
 ifneq (,$(Curlse_config))
 	@echo "==== Building Curlse ($(Curlse_config)) ===="
@@ -40,6 +64,9 @@ endif
 
 clean:
 	@${MAKE} --no-print-directory -C build/jsoncpp -f Makefile clean
+	@${MAKE} --no-print-directory -C zlib -f Makefile clean
+	@${MAKE} --no-print-directory -C build/libzip -f Makefile clean
+	@${MAKE} --no-print-directory -C build/libzippp -f Makefile clean
 	@${MAKE} --no-print-directory -C . -f Curlse.make clean
 
 help:
@@ -53,6 +80,9 @@ help:
 	@echo "   all (default)"
 	@echo "   clean"
 	@echo "   jsoncpp"
+	@echo "   zlib"
+	@echo "   libzip"
+	@echo "   libzippp"
 	@echo "   Curlse"
 	@echo ""
 	@echo "For more information, see https://github.com/premake/premake-core/wiki"

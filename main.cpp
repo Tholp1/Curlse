@@ -7,7 +7,7 @@
 #include <stringstuff.h>
 #include <structs.h>
 #include <vector>
-#include <libzippp/libzippp.h>
+#include <libzippp/src/libzippp.h>
 #include <json.cpp>
 #include <http.cpp>
 
@@ -31,13 +31,13 @@ int main (int argc, char *argv[])
 
     if (argc < 2)
     {
-        printf("Please specify a modpack manifest zip");
+        printf("Please specify a modpack manifest zip\n");
         return EXIT_FAILURE;
     }
 
     if (argc < 3)
     {
-        printf("Please specify a folder to install to");
+        printf("Please specify a folder to install to\n");
         return EXIT_FAILURE;
     }
 
@@ -113,7 +113,7 @@ int main (int argc, char *argv[])
     ProgressPercent progress(Modlist.size(), 2.5f, "Getting Jar names.");
     for (Mod &mod : Modlist)
     {
-        std::string name = GetJarName(mod);
+        std::string name(GetJarName(mod));
         if (name.empty())
         {
             remove("Curlsetemp.txt");

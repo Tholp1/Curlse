@@ -1,4 +1,4 @@
-#pragma once
+//#pragma once
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -19,19 +19,26 @@ namespace fs = std::filesystem;
 
 static std::string GetJarName(Mod &mod)
 {
-    std::vector<char> output;
+    std::string cmd = "curl -o Curlsetemp.txt -sLX GET \"api.curseforge.com/v1/mods/";
 
-    std::string cmd("curl -o Curlsetemp.txt -sLX GET \"api.curseforge.com/v1/mods/");// 
     cmd += std::to_string(mod.ModId);
     cmd += "/files/";
     cmd += std::to_string(mod.FileId);
     cmd += "\"";
 
-    cmd += " -H \"Accept: application/json\" -H \"x-api-key: ";
+    cmd += " -H \'Accept: application/json\' -H \'x-api-key: "; 
     cmd += API_KEY;
-    cmd += "\"";
+    cmd += "\'";
+#ifdef Windows
+    cmd = ReplaceChar(cmd, "\'", "\"");
+#endif
 
-    system(cmd.c_str());
+    int error = system(cmd.c_str());
+    if (error)
+    {
+        printf("Curl returned error code %i, Aborting.\n", error);
+        return NULL;
+    }
 
     std::ifstream html("Curlsetemp.txt");
     html.seekg(0, std::ios::end);
@@ -39,9 +46,9 @@ static std::string GetJarName(Mod &mod)
     html.seekg(0, std::ios::beg);
     std::vector<char> buffer(size);
 
-    if (!html.read(buffer.data(), size))
+    if (!html.read(buffer.data(), size)) 
     {
-        printf("File read error!!\n");
+        printf("File read error!\n");
         return NULL;
     }
 
@@ -49,25 +56,24 @@ static std::string GetJarName(Mod &mod)
     Json::Value Json;
     reader.parse(buffer.data(), Json);
 
-    if (Json == NULL)
+    if (Json.isNull())
     {
         printf("Got no response from CurseForge servers.\n");
         return NULL;
     }
     Json::Value File = Json["data"]["fileName"];
-    Json::Value Name = Json["data"]["fileName"];
-    if (File == NULL)
+
+    if (File.isNull())
     {
         printf("Unexpected response from CurseForge servers, Aborting.\n");
         return NULL;
     }
-
     return File.asString();
 }
 
 static int DownloadMod(Mod mod, fs::path path)
 {
-    std::string cmd("curl --create-dirs -sOJL --output-dir ");
+    std::string cmd = "curl --create-dirs -sOJL --output-dir ";
     cmd += "\"" + path.string();
     cmd += "/mods/\" ";
     cmd += "--url \"https://edge.forgecdn.net/files/";

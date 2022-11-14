@@ -11,13 +11,13 @@ static bool ParseManifest(std::string &JsonString, std::vector<Mod> &List)
 	Json::Reader reader;
 	Json::Value Json;
 	reader.parse(JsonString.c_str(), Json);
-	if (Json == NULL)
+	if (Json.isNull())
 	{
 		printf("manifest.json unable to be loaded.\n");
 		return false;
 	}
 	Json::Value Files = Json["files"];
-	if (Files == NULL)
+	if (Files.isNull())
 	{
 		printf("Invalidly formated manifest.json.\n");
 		return false;
