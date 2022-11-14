@@ -1,0 +1,25 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Setup Premake Action
+      uses: eariassoto/setup-premake@v1
+
+    
+    - uses: actions/checkout@v3
+    - name: Premake
+      continue-on-error: true
+      run: premake5 gmake2 && premake5 gmake2 
+    - name: make
+      run: make config=release
+
