@@ -1,2 +1,6 @@
 
 .vscode/settings.json
+build/**
+bin/**
+*.o
+*.d

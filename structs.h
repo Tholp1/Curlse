@@ -8,6 +8,7 @@ struct Mod
     int FileId;
     int ModId;
     std::string JarName;
+    bool DontDL = false;
     //std::string DisplayName;
     //std::string BaseUrl;
 };

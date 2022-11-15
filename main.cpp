@@ -15,17 +15,6 @@
 namespace zippp = libzippp;
 namespace fs = std::filesystem;
 
-int ThreadsUsed = 0;
-//just to make async a bit easier
-bool dlmod(Mod& mod, fs::path path, ProgressPercent* progress)
-{
-    ThreadsUsed++;
-    bool success = DownloadMod(mod, path);
-    printf("\na\n");
-    ThreadsUsed--;
-    return success;
-}
-
 int main (int argc, char *argv[])
 {
 
@@ -37,7 +26,7 @@ int main (int argc, char *argv[])
 
     if (argc < 3)
     {
-        printf("Please specify a folder to install to\n");
+        printf("Please specify the MultiMC instances dirrectory\n");
         return EXIT_FAILURE;
     }
 
@@ -61,8 +50,9 @@ int main (int argc, char *argv[])
     }
 
     if (!fs::exists(path))
+    {
         fs::create_directories(path);
-
+    }
 
     //this is some bullshit
     //have to create a file stream of the zip and create a libzippp class from that because the standard way doesnt work...
@@ -88,8 +78,8 @@ int main (int argc, char *argv[])
     }
 
     zippp::ZipEntry JsonEntry = zf->getEntry("manifest.json", false, false);
-    zippp::ZipEntry HtmlEntry = zf->getEntry("modlist.html", false, false);
-    if (JsonEntry.isNull() || HtmlEntry.isNull())
+    //zippp::ZipEntry HtmlEntry = zf->getEntry("modlist.html", false, false);
+    if (JsonEntry.isNull())
     {
         printf("Not a pack manifest zip, Aborting.");
         zf->close();
@@ -99,7 +89,7 @@ int main (int argc, char *argv[])
         printf("Manifest found, downloading.\n");
     
     std::string json = (char*)zf->readEntry(JsonEntry, true);
-    std::string html = (char*)zf->readEntry(HtmlEntry, true);
+    //std::string html = (char*)zf->readEntry(HtmlEntry, true);
 
     std::vector<Mod> Modlist;
     bool success = ParseManifest(json, Modlist);
@@ -119,10 +109,12 @@ int main (int argc, char *argv[])
             remove("Curlsetemp.txt");
             return EXIT_FAILURE;
         }
+        if(fs::exists(fs::path( path.string() + ".minecraft/mods/" + name)))
+            mod.DontDL = true;
         mod.JarName = name;
         progress.Update();
     }
-    remove("Curlsetemp.txt");
+    remove("Curlsetemp.txt"); 
 
     ProgressPercent progress2( Modlist.size(), 2.5f, "Downloading mods.");
     //std::vector<std::future<bool>> Waitlist;
@@ -136,18 +128,22 @@ int main (int argc, char *argv[])
         };
         progress2.Update();
     }
-    /*
-    i = 0;
-    for (auto &x : Waitlist)
+    for (zippp::ZipEntry z: zf->getEntries())
     {
-        i++;
-        if (!x.get())
+        if (z.getName() == "manifest.json" || z.getName() == "modlist.html")
+            continue;
+        if (z.isDirectory())
         {
-            printf("Mod %s failed to download", Modlist[i].JarName.c_str());
-            return EXIT_FAILURE;
+            std::string ending = RemoveXLeadingFolders(1, z.getName()).string();
+            if (ending.empty())
+                continue;
+            fs::create_directories(path.string() + ending);
+            continue;
         }
+        std::ifstream overridefile(path.string() + RemoveXLeadingFolders(1, z.getName()).string());
+
+        
     }
-    */
 
     
     zf->close();

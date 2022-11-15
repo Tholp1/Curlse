@@ -75,7 +75,7 @@ static int DownloadMod(Mod mod, fs::path path)
 {
     std::string cmd = "curl --create-dirs -sOJL --output-dir ";
     cmd += "\"" + path.string();
-    cmd += "/mods/\" ";
+    cmd += ".minecraft/mods/\" ";
     cmd += "--url \"https://edge.forgecdn.net/files/";
 
     std::string fileid(std::to_string(mod.FileId));
