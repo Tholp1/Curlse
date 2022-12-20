@@ -2,6 +2,7 @@
 #include <iostream>
 #include <filesystem>
 #include <string>
+#include <vector>
 namespace fs = std::filesystem;
 
 static std::string GetLastXChars(int chars, std::string stringin)
@@ -25,14 +26,17 @@ static std::string GetFirstXChars(int chars, std::string stringin)
     return out;
 };
 
-static std::string ReplaceChar(std::string stringin, char what, char with)
+static std::string ReplaceChar(std::string stringin, char what, const char* with)
 {
-    for (char &c : stringin)
+    std::string stringout = "";
+    for (char c : stringin)
     {
         if (c == what)
-            c = with;
+            stringout += with;
+        else
+            stringout += c;
     }
-    return stringin;
+    return stringout;
 }
 
 
@@ -42,16 +46,32 @@ static fs::path RemoveXLeadingFolders(int x , fs::path path)
         return path;
     std::string pathstring = path;
     std::string newstring;
-    int i = 0;
     for (char c : pathstring)
     {   
         if (x == 0)
             newstring += c;
-        if (c == char("/") || c == char("\\"))
+        if (c == '/' || c == '\\')
         {
             x--;
         }
-        i++;
     }
     return newstring;
+}
+
+static std::vector<std::string> Split(std::string stringin, char splitter)
+{
+    std::string concat;
+    std::vector<std::string> vec;
+    for (char c : stringin)
+    {
+        if (c == splitter)
+        {
+            vec.push_back(concat);
+            concat = "";
+            continue;
+        }
+        concat += c;
+    }
+    vec.push_back(concat);
+    return vec;
 }

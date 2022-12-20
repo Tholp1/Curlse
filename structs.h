@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <stringstuff.h>
+#include <vector>
 
 struct Mod
 {
@@ -9,9 +10,18 @@ struct Mod
     int ModId;
     std::string JarName;
     bool DontDL = false;
-    //std::string DisplayName;
-    //std::string BaseUrl;
 };
+
+struct ModPack
+{
+    std::vector<Mod> Modlist;
+    std::string Name;
+    std::string ModLoader;
+    std::string ModLoaderVersion;
+    std::string Version;
+    std::string MCVersion;
+};
+
 
 class ProgressPercent
 {

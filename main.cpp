@@ -18,15 +18,10 @@ namespace fs = std::filesystem;
 int main (int argc, char *argv[])
 {
 
-    if (argc < 2)
-    {
-        printf("Please specify a modpack manifest zip\n");
-        return EXIT_FAILURE;
-    }
-
     if (argc < 3)
     {
-        printf("Please specify the MultiMC instances dirrectory\n");
+        printf("USAGE: curlse [pack manifest zip] [multimc instance folder]\n\n");
+        printf(" Example: curlse ~/Downloads/Above+and+Beyond-1.3.zip ~/bin/MultiMC.d/instances\n");
         return EXIT_FAILURE;
     }
 
@@ -47,11 +42,6 @@ int main (int argc, char *argv[])
     {
         printf("File not found");
         return EXIT_FAILURE;
-    }
-
-    if (!fs::exists(path))
-    {
-        fs::create_directories(path);
     }
 
     //this is some bullshit
@@ -78,30 +68,34 @@ int main (int argc, char *argv[])
     }
 
     zippp::ZipEntry JsonEntry = zf->getEntry("manifest.json", false, false);
-    //zippp::ZipEntry HtmlEntry = zf->getEntry("modlist.html", false, false);
     if (JsonEntry.isNull())
     {
         printf("Not a pack manifest zip, Aborting.");
         zf->close();
         return EXIT_FAILURE;
     }
-    else
-        printf("Manifest found, downloading.\n");
     
     std::string json = (char*)zf->readEntry(JsonEntry, true);
-    //std::string html = (char*)zf->readEntry(HtmlEntry, true);
 
-    std::vector<Mod> Modlist;
-    bool success = ParseManifest(json, Modlist);
+    ModPack Modpack;
+    bool success = ParseManifest(json, Modpack);
     if (!success)
     {
         printf("Json read error, corrupted manifest?");
         zf->close();
         return EXIT_FAILURE;
     }
+    printf("Manifest found, downloading.\n");
 
-    ProgressPercent progress(Modlist.size(), 2.5f, "Getting Jar names.");
-    for (Mod &mod : Modlist)
+    path += "/" + Modpack.Name;
+
+    if (!fs::exists(path))
+    {
+        fs::create_directories(path);
+    }
+
+    ProgressPercent progress(Modpack.Modlist.size(), 2.5f, "Getting Jar names.");
+    for (Mod &mod : Modpack.Modlist)
     {
         std::string name(GetJarName(mod));
         if (name.empty())
@@ -109,18 +103,22 @@ int main (int argc, char *argv[])
             remove("Curlsetemp.txt");
             return EXIT_FAILURE;
         }
-        if(fs::exists(fs::path( path.string() + ".minecraft/mods/" + name)))
+        if(fs::exists(fs::path( path.string() + "/.minecraft/mods/" + name)))
             mod.DontDL = true;
         mod.JarName = name;
         progress.Update();
     }
     remove("Curlsetemp.txt"); 
 
-    ProgressPercent progress2( Modlist.size(), 2.5f, "Downloading mods.");
-    //std::vector<std::future<bool>> Waitlist;
+    ProgressPercent progress2( Modpack.Modlist.size(), 2.5f, "Downloading mods.");
     int i = 0;
-    for (Mod& mod : Modlist)
+    for (Mod& mod : Modpack.Modlist)
     {
+        if (mod.DontDL)
+        {
+            progress2.Update();
+            continue;
+        }
         if(DownloadMod(mod, path) > 0)
         {
             printf("Mod \"%s\" Failed to download! Aborting.\n", mod.JarName.c_str());
@@ -128,6 +126,7 @@ int main (int argc, char *argv[])
         };
         progress2.Update();
     }
+
     for (zippp::ZipEntry z: zf->getEntries())
     {
         if (z.getName() == "manifest.json" || z.getName() == "modlist.html")
@@ -137,15 +136,42 @@ int main (int argc, char *argv[])
             std::string ending = RemoveXLeadingFolders(1, z.getName()).string();
             if (ending.empty())
                 continue;
-            fs::create_directories(path.string() + ending);
+            fs::create_directories(path.string() + "/.minecraft/" + ending);
             continue;
         }
-        std::ifstream overridefile(path.string() + RemoveXLeadingFolders(1, z.getName()).string());
-
+        std::ofstream overridefile(path.string() + "/.minecraft/" + RemoveXLeadingFolders(1, z.getName()).string());
+        overridefile << (char*)zf->readEntry(z);
         
     }
-
     
+    printf("Creating MultiMc Profile...\n");
+
+    std::ofstream mmcInstance(path.string() + "/instance.cfg");
+    mmcInstance << "InstanceType=OneSix \nname=" + Modpack.Name + " " + Modpack.Version;
+
+    std::ofstream mmcJsonFile(path.string() + "/mmc-pack.json");
+    char *mmcPackJson;
+    sprintf(mmcPackJson, "\
+    {\n \
+    \"components\": [\n \
+        {\n\
+            \"important\": true,\n\
+            \"uid\": \"net.minecraft\",\n\
+            \"version\": \"%s\"\n\
+        },\n\
+        {\n\
+            \"important\": true,\n\
+            \"uid\": \"%s\",\n\
+            \"version\": \"%s\"\n\
+        }\n\
+    ],\n\
+    \"formatVersion\": 1\n\
+}\
+", Modpack.MCVersion.c_str(), Modpack.ModLoader.c_str(), Modpack.ModLoaderVersion.c_str() );
+
+    mmcJsonFile << mmcPackJson;
+
     zf->close();
+    printf("Done!\n");
     return EXIT_SUCCESS;
 }

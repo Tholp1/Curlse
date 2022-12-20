@@ -6,7 +6,8 @@
 #include <stringstuff.h>
 #include <json/json.h>
 
-static bool ParseManifest(std::string &JsonString, std::vector<Mod> &List)
+
+static bool ParseManifest(std::string &JsonString, ModPack &Pack)
 {
 	Json::Reader reader;
 	Json::Value Json;
@@ -16,6 +17,12 @@ static bool ParseManifest(std::string &JsonString, std::vector<Mod> &List)
 		printf("manifest.json unable to be loaded.\n");
 		return false;
 	}
+	if (strcmp(Json["manifestType"].asCString(), "minecraftModpack"))
+	{
+		printf("Not a modpack manifest.\n");
+		return false;
+	}
+
 	Json::Value Files = Json["files"];
 	if (Files.isNull())
 	{
@@ -27,8 +34,30 @@ static bool ParseManifest(std::string &JsonString, std::vector<Mod> &List)
 		Mod mod;
 		mod.ModId = Files[i]["projectID"].asInt();
 		mod.FileId = Files[i]["fileID"].asInt();
-		List.push_back(mod);
+		Pack.Modlist.push_back(mod);
 	}
+
+	Pack.Name		= Json["name"].asString();
+	Pack.Version	= Json["version"].asString();
+	Pack.MCVersion	= Json["minecraft"]["version"].asString();
+
+	std::string modloaderstr	= Json["minecraft"]["modLoaders"][0]["id"].asString();
+    std::vector<std::string> vec = Split(modloaderstr, '-');
+
+	if(!strcmp(vec[0].c_str(), "forge"))
+	{
+		Pack.ModLoader = "net.minecraftforge";
+	}
+	else if (!strcmp(vec[0].c_str(), "fabric"))
+	{
+		Pack.ModLoader = "net.fabricmc.fabric-loader";
+	}
+	else
+	{
+		printf("Unrecognized modloader, aborting.");
+		return false;
+	}
+	Pack.ModLoaderVersion = vec[1];
 
 	return true;
 }

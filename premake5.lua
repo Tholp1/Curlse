@@ -15,7 +15,7 @@ workspace "Curlse"
 
 os.execute("cmake -S jsoncpp -B build/jsoncpp -Wno-dev -DBUILD_SHARED_LIBS=OFF")
 os.execute("cmake -S zlib -B zlib -Wno-dev -DBUILD_SHARED_LIBS=OFF")
-os.execute("cmake -S libzip -B build/libzip -Wno-dev -DBUILD_SHARED_LIBS=OFF -DZLIB_LIBRARY=./zlib -DZLIB_INCLUDE_DIR=./zlib -DBUILD_TOOLS=OFF -DBUILD_EXAMPLES=OFF -DENABLE_COMMONCRYPTO=OFF -DENABLE_GNUTLS=OFF -DENABLE_MBEDTLS=OFF -DENABLE_OPENSSL=OFF -DENABLE_WINDOWS_CRYPTO=OFF")
+os.execute("cmake -S libzip -B build/libzip -Wno-dev -DBUILD_SHARED_LIBS=OFF -DZLIB_LIBRARY=./zlib -DZLIB_INCLUDE_DIR=./zlib -DBUILD_TOOLS=OFF -DBUILD_EXAMPLES=OFF -DENABLE_COMMONCRYPTO=OFF -DENABLE_GNUTLS=OFF -DENABLE_MBEDTLS=OFF -DENABLE_OPENSSL=OFF -DENABLE_WINDOWS_CRYPTO=OFF -DENABLE_LZMA=OFF -DENABLE_BZIP2=OFF -DENABLE_ZSTD=OFF")
 os.execute("cp build/libzip/zipconf.h libzip/lib/zipconf.h")
 os.execute("cmake -S libzippp -B build/libzippp -Wno-dev -DBUILD_SHARED_LIBS=OFF -DZLIB_LIBRARY=./zlib -DZLIB_INCLUDE_DIR=./zlib -DLIBZIP_LIBRARY=./build/libzip/lib -DLIBZIP_INCLUDE_DIR=./libzip/lib -DLIBZIPPP_BUILD_TESTS=OFF")
 
