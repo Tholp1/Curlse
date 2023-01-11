@@ -11,7 +11,6 @@
 #include <json.cpp>
 #include <http.cpp>
 
-
 namespace zippp = libzippp;
 namespace fs = std::filesystem;
 
@@ -87,7 +86,7 @@ int main (int argc, char *argv[])
     }
     printf("Manifest found, downloading.\n");
 
-    path += "/" + Modpack.Name;
+    path += "/" + Modpack.Name + "-" + Modpack.Version + "-" + Modpack.MCVersion;
 
     if (!fs::exists(path))
     {
@@ -127,6 +126,7 @@ int main (int argc, char *argv[])
         progress2.Update();
     }
 
+    printf("Extracting Pack configs and resources.");
     for (zippp::ZipEntry z: zf->getEntries())
     {
         if (z.getName() == "manifest.json" || z.getName() == "modlist.html")
@@ -139,15 +139,16 @@ int main (int argc, char *argv[])
             fs::create_directories(path.string() + "/.minecraft/" + ending);
             continue;
         }
-        std::ofstream overridefile(path.string() + "/.minecraft/" + RemoveXLeadingFolders(1, z.getName()).string());
+
+        std::string overF(path.string() + "/.minecraft/" + RemoveXLeadingFolders(1, z.getName()).string());
+        std::ofstream overridefile(overF);
+        printf("%s\n", overF.c_str());
         overridefile << (char*)zf->readEntry(z);
-        
     }
-    
     printf("Creating MultiMc Profile...\n");
 
     std::ofstream mmcInstance(path.string() + "/instance.cfg");
-    mmcInstance << "InstanceType=OneSix \nname=" + Modpack.Name + " " + Modpack.Version;
+    mmcInstance << ("InstanceType=OneSix \nname=" + Modpack.Name + " " + Modpack.Version);
 
     std::ofstream mmcJsonFile(path.string() + "/mmc-pack.json");
     char *mmcPackJson;

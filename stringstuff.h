@@ -50,10 +50,8 @@ static fs::path RemoveXLeadingFolders(int x , fs::path path)
     {   
         if (x == 0)
             newstring += c;
-        if (c == '/' || c == '\\')
-        {
+        else if (c == '/' || c == '\\')
             x--;
-        }
     }
     return newstring;
 }
