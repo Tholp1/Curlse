@@ -9,6 +9,7 @@ struct Mod
     int FileId;
     int ModId;
     std::string JarName;
+    std::string DownloadUrl;
     bool DontDL = false;
 };
 

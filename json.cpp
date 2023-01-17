@@ -34,6 +34,8 @@ static bool ParseManifest(std::string &JsonString, ModPack &Pack)
 		Mod mod;
 		mod.ModId = Files[i]["projectID"].asInt();
 		mod.FileId = Files[i]["fileID"].asInt();
+        if (Files[i]["downloadUrl"].asCString())
+            mod.DownloadUrl = Files[i]["downloadUrl"].asCString();
 		Pack.Modlist.push_back(mod);
 	}
 

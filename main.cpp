@@ -10,6 +10,14 @@
 #include <libzippp/src/libzippp.h>
 #include <json.cpp>
 #include <http.cpp>
+#include <stdio.h>
+
+inline void pause()
+{
+    printf("PAUSED %i\n", __LINE__);
+    char tmp[4];
+    tmp = std::cin;
+}
 
 namespace zippp = libzippp;
 namespace fs = std::filesystem;
@@ -96,21 +104,23 @@ int main (int argc, char *argv[])
     ProgressPercent progress(Modpack.Modlist.size(), 2.5f, "Getting Jar names.");
     for (Mod &mod : Modpack.Modlist)
     {
-        std::string name(GetJarName(mod));
-        if (name.empty())
-        {
-            remove("Curlsetemp.txt");
-            return EXIT_FAILURE;
+        if (mod.DownloadUrl.empty())
+           {
+            std::string name(GetJarName(mod));
+            if (name.empty())
+            {
+                remove("Curlsetemp.txt");
+                return EXIT_FAILURE;
+            }
+            if(fs::exists(fs::path( path.string() + "/.minecraft/mods/" + name)))
+                mod.DontDL = true;
+            mod.JarName = name;
         }
-        if(fs::exists(fs::path( path.string() + "/.minecraft/mods/" + name)))
-            mod.DontDL = true;
-        mod.JarName = name;
         progress.Update();
     }
     remove("Curlsetemp.txt"); 
 
     ProgressPercent progress2( Modpack.Modlist.size(), 2.5f, "Downloading mods.");
-    int i = 0;
     for (Mod& mod : Modpack.Modlist)
     {
         if (mod.DontDL)
@@ -118,15 +128,16 @@ int main (int argc, char *argv[])
             progress2.Update();
             continue;
         }
-        if(DownloadMod(mod, path) > 0)
+        int error = DownloadMod(mod, path);
+        if(error)
         {
-            printf("Mod \"%s\" Failed to download! Aborting.\n", mod.JarName.c_str());
+            printf("Mod \"%s\" Failed to download with error code %i! Aborting.\n", mod.DownloadUrl.empty() ? mod.JarName.c_str() : mod.DownloadUrl.c_str(), error);
             return EXIT_FAILURE;
         };
         progress2.Update();
     }
 
-    printf("Extracting Pack configs and resources.");
+    printf("Extracting Pack configs and resources.\n");
     for (zippp::ZipEntry z: zf->getEntries())
     {
         if (z.getName() == "manifest.json" || z.getName() == "modlist.html")
@@ -140,14 +151,36 @@ int main (int argc, char *argv[])
             continue;
         }
 
-        std::string overF(path.string() + "/.minecraft/" + RemoveXLeadingFolders(1, z.getName()).string());
-        std::ofstream overridefile(overF);
-        printf("%s\n", overF.c_str());
-        overridefile << (char*)zf->readEntry(z);
+        std::ofstream overridefile(path.string() + "/.minecraft/" + RemoveXLeadingFolders(1, z.getName()).string());
+
+
+        if (GetExtention((z.getName())) == "png")
+            overridefile << z.readAsBinary();
+        else
+            overridefile << z.readAsText();
     }
     printf("Creating MultiMc Profile...\n");
+    pause();
+
+    if (Modpack.MCVersion.empty() || Modpack.Name.empty() || Modpack.ModLoader.empty() || Modpack.ModLoaderVersion.empty() || Modpack.Version.empty())
+    {
+        if (Modpack.MCVersion.empty())
+            printf("Missing Minecraft version info.\n");
+        if (Modpack.Name.empty())
+            printf("Missing modpack name info.\n");
+        if (Modpack.ModLoader.empty())
+            printf("Missing modloader info.\n");
+        if (Modpack.ModLoaderVersion.empty())
+            printf("Missing modloader version info.\n");
+        if (Modpack.Version.empty())
+            printf("Missing pack version info.\n");
+        printf("Missing vital pack infomation! Cannot continue.\n");
+    }
+
+
 
     std::ofstream mmcInstance(path.string() + "/instance.cfg");
+    pause();
     mmcInstance << ("InstanceType=OneSix \nname=" + Modpack.Name + " " + Modpack.Version);
 
     std::ofstream mmcJsonFile(path.string() + "/mmc-pack.json");

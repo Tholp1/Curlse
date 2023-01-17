@@ -73,3 +73,17 @@ static std::vector<std::string> Split(std::string stringin, char splitter)
     vec.push_back(concat);
     return vec;
 }
+
+static std::string GetExtention(std::string stringin)
+{
+    std::string extention;
+
+    for (auto it = stringin.rbegin(); it != stringin.rend(); it++ )
+    {
+        if (*it == '.')
+            break;
+        extention += *it;
+    }
+    return extention;
+
+}

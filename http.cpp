@@ -73,16 +73,22 @@ static std::string GetJarName(Mod &mod)
 
 static int DownloadMod(Mod mod, fs::path path)
 {
-    std::string url = "https://edge.forgecdn.net/files/";
+    std::string url;
+    if (mod.DownloadUrl.empty())
+    {
+        url = "https://edge.forgecdn.net/files/";
 
-    std::string fileid(std::to_string(mod.FileId));
-    std::string idSlug = GetFirstXChars(4, fileid) + "/" + GetLastXChars(4, fileid).c_str();//converting to cstring and back fixes not being able to append more after??
-    url += idSlug + "/";
-    url += mod.JarName;
+        std::string fileid(std::to_string(mod.FileId));
+        std::string idSlug = GetFirstXChars(4, fileid) + "/" + GetLastXChars(4, fileid).c_str();//converting to cstring and back fixes not being able to append more after??
+        url += idSlug + "/";
+        url += mod.JarName;
+    }
+    else
+        url = mod.DownloadUrl;
 
     url = ReplaceChar(url, ' ', "%20");
 
-    std::string cmd = "curl --create-dirs -sOJL --output-dir ";
+    std::string cmd = "curl --create-dirs -sgOJL --output-dir ";
     cmd += "\"" + path.string();
     cmd += "/.minecraft/mods/\" ";
     cmd += "--url \"" + url + "\"";
@@ -95,8 +101,5 @@ static int DownloadMod(Mod mod, fs::path path)
     //cmd += "\" -H \"User - Agent: Mozilla / 5.0 (Windows NT 10.0; Win64; x64; rv:106.0) Gecko / 20100101 Firefox / 106.0\" -H \"Accept : text / html, application / xhtml + xml, application / xml; q = 0.9, image / avif, image / webp, */*;q=0.8\" -H \"Accept-Language: en-US,en;q=0.5\" -H \"Accept-Encoding: gzip, deflate, br\" -H \"Referer: https://www.curseforge.com/\" -H \"DNT: 1\" -H \"Connection: keep-alive\" -H \"Upgrade-Insecure-Requests: 1\" -H \"Sec-Fetch-Dest: document\" -H \"Sec-Fetch-Mode: navigate\" -H \"Sec-Fetch-Site: cross-site\" -H \"Sec-GPC: 1\" -H \"TE: trailers\"";
     //printf(cmd.c_str());
     //return true;
-    int err = system(cmd.c_str());
-    if (err)
-        printf("%s\n",cmd.c_str());
-    return err;
+    return system(cmd.c_str());
 }
