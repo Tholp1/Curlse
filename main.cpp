@@ -16,7 +16,7 @@ inline void pause()
 {
     printf("PAUSED %i\n", __LINE__);
     char tmp[4];
-    tmp = std::cin;
+    std::cin >> tmp;
 }
 
 namespace zippp = libzippp;
