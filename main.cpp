@@ -12,13 +12,6 @@
 #include <http.cpp>
 #include <stdio.h>
 
-inline void pause()
-{
-    printf("PAUSED %i\n", __LINE__);
-    char tmp[4];
-    std::cin >> tmp;
-}
-
 namespace zippp = libzippp;
 namespace fs = std::filesystem;
 
@@ -160,7 +153,6 @@ int main (int argc, char *argv[])
             overridefile << z.readAsText();
     }
     printf("Creating MultiMc Profile...\n");
-    pause();
 
     if (Modpack.MCVersion.empty() || Modpack.Name.empty() || Modpack.ModLoader.empty() || Modpack.ModLoaderVersion.empty() || Modpack.Version.empty())
     {
@@ -180,11 +172,10 @@ int main (int argc, char *argv[])
 
 
     std::ofstream mmcInstance(path.string() + "/instance.cfg");
-    pause();
     mmcInstance << ("InstanceType=OneSix \nname=" + Modpack.Name + " " + Modpack.Version);
 
     std::ofstream mmcJsonFile(path.string() + "/mmc-pack.json");
-    char *mmcPackJson;
+    char mmcPackJson[2048];
     sprintf(mmcPackJson, "\
     {\n \
     \"components\": [\n \
@@ -200,9 +191,7 @@ int main (int argc, char *argv[])
         }\n\
     ],\n\
     \"formatVersion\": 1\n\
-}\
-", Modpack.MCVersion.c_str(), Modpack.ModLoader.c_str(), Modpack.ModLoaderVersion.c_str() );
-
+}\0", Modpack.MCVersion.c_str(), Modpack.ModLoader.c_str(), Modpack.ModLoaderVersion.c_str() );
     mmcJsonFile << mmcPackJson;
 
     zf->close();
