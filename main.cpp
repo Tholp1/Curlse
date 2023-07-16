@@ -7,17 +7,17 @@
 #include <stringstuff.h>
 #include <structs.h>
 #include <vector>
-#include <libzippp/src/libzippp.h>
+#include <zip.h>
+#include <curl/curl.h>
 #include <json.cpp>
 #include <http.cpp>
 #include <stdio.h>
 
-namespace zippp = libzippp;
 namespace fs = std::filesystem;
 
 int main (int argc, char *argv[])
 {
-
+    printf("Curlse");
     if (argc < 3)
     {
         printf("USAGE: curlse [pack manifest zip] [multimc instance folder]\n\n");
@@ -47,59 +47,77 @@ int main (int argc, char *argv[])
     //this is some bullshit
     //have to create a file stream of the zip and create a libzippp class from that because the standard way doesnt work...
 
-    std::ifstream zip(file.lexically_normal().string(), std::ios::binary);//| std::ios::ate);
-    zip.unsetf(std::ios::skipws);
-    zip.seekg(0, std::ios::end);
-    std::streamsize size = zip.tellg();
-    zip.seekg(0, std::ios::beg);
-    std::vector<char> buffer(size);
+//    std::ifstream zip(file.lexically_normal().string(), std::ios::binary);//| std::ios::ate);
+//    zip.unsetf(std::ios::skipws);
+//    zip.seekg(0, std::ios::end);
+//    std::streamsize size = zip.tellg();
+//    zip.seekg(0, std::ios::beg);
+//    std::vector<char> buffer(size);
 
-    if (!zip.read(buffer.data(), size))
-    {
-        printf("File read error!!\n");
-        return EXIT_FAILURE;
-    }
+//    if (!zip.read(buffer.data(), size))
+//    {
+//        printf("File read error!!\n");
+//        return EXIT_FAILURE;
+//    }
 
-    zippp::ZipArchive *zf = zippp::ZipArchive::fromBuffer(buffer.data(), size);
+    //zippp::ZipArchive *zf = zippp::ZipArchive::fromBuffer(buffer.data(), size);
+    int err;
+    zip_t *zf = zip_open(file.lexically_normal().string().c_str(), 0, &err);
+
     if (!zf)
     {
-        printf("Zip read error!!\n");
+        zip_error_t error;
+        zip_error_init_with_code(&error, err);
+        printf("Zip read error: %i / %s\n", error, zip_error_strerror(&error));
+        zip_error_fini(&error);
         return EXIT_FAILURE;
     }
 
-    zippp::ZipEntry JsonEntry = zf->getEntry("manifest.json", false, false);
-    if (JsonEntry.isNull())
+    //zippp::ZipEntry JsonEntry = zf->getEntry("manifest.json", false, false);
+    zip_file_t *JsonEntry = zip_fopen(zf, "manifest.json", 0);
+    if (!JsonEntry)
     {
         printf("Not a pack manifest zip, Aborting.");
-        zf->close();
+        zip_close(zf);
         return EXIT_FAILURE;
     }
     
-    std::string json = (char*)zf->readEntry(JsonEntry, true);
+    zip_stat_t manifestStat; zip_stat(zf, "manifest.json", 0, &manifestStat);
+    void *JsonBuf = malloc(manifestStat.size + 1);
+    zip_fread(JsonEntry, JsonBuf, manifestStat.size);
+
+    //std::string json = (char*)zf->readEntry(JsonEntry, true);
+    std::string json((const char*)JsonBuf, manifestStat.size);
+    free(JsonBuf);
 
     ModPack Modpack;
-    bool success = ParseManifest(json, Modpack);
-    if (!success)
+    if (!ParseManifest(json, Modpack))
     {
         printf("Json read error, corrupted manifest?");
-        zf->close();
+        zip_close(zf);
         return EXIT_FAILURE;
     }
     printf("Manifest found, downloading.\n");
 
-    path += "/" + Modpack.Name + "-" + Modpack.Version + "-" + Modpack.MCVersion;
-
-    if (!fs::exists(path))
+    CURL *curl = curl_easy_init();
+    if (!curl)
     {
-        fs::create_directories(path);
+        printf("Unable to Init CurlLib.\n");
+        return EXIT_FAILURE;
     }
+    if (path.string().back() != '/')
+        path += "/";
+    path += Modpack.Name + "-" + Modpack.Version + "-" + Modpack.MCVersion;
+
+    if(!fs::exists(path / ".minecraft/mods"))
+        fs::create_directories(path / ".minecraft/mods");
 
     ProgressPercent progress(Modpack.Modlist.size(), 2.5f, "Getting Jar names.");
     for (Mod &mod : Modpack.Modlist)
     {
         if (mod.DownloadUrl.empty())
            {
-            std::string name(GetJarName(mod));
+            std::string name(GetJarName(mod, curl));
             if (name.empty())
             {
                 remove("Curlsetemp.txt");
@@ -121,7 +139,7 @@ int main (int argc, char *argv[])
             progress2.Update();
             continue;
         }
-        int error = DownloadMod(mod, path);
+        int error = DownloadMod(mod, path, curl);
         if(error)
         {
             printf("Mod \"%s\" Failed to download with error code %i! Aborting.\n", mod.DownloadUrl.empty() ? mod.JarName.c_str() : mod.DownloadUrl.c_str(), error);
@@ -131,26 +149,37 @@ int main (int argc, char *argv[])
     }
 
     printf("Extracting Pack configs and resources.\n");
-    for (zippp::ZipEntry z: zf->getEntries())
+    zip_uint64_t num_entries = zip_get_num_entries(zf, 0);
+    for (zip_uint64_t i = 0; i < num_entries; i++)
     {
-        if (z.getName() == "manifest.json" || z.getName() == "modlist.html")
+        std::string name = zip_get_name(zf, i, 0);
+        if (name == "manifest.json" || name == "modlist.html")
             continue;
-        if (z.isDirectory())
+        if (name.back() == '/')//dirrectory
         {
-            std::string ending = RemoveXLeadingFolders(1, z.getName()).string();
+            std::string ending = RemoveXLeadingFolders(1, name);
             if (ending.empty())
                 continue;
             fs::create_directories(path.string() + "/.minecraft/" + ending);
             continue;
         }
 
-        std::ofstream overridefile(path.string() + "/.minecraft/" + RemoveXLeadingFolders(1, z.getName()).string());
+        std::string overridePath = path.string() + "/.minecraft/" + RemoveXLeadingFolders(1, name).string();
+        fs::path overrideFolder = fs::path(RemoveXTrailingFolders(1, fs::path(overridePath)));
+        if (!fs::exists( overrideFolder))
+            fs::create_directories(overrideFolder);
+
+        std::ofstream overrideFile(overridePath);
 
 
-        if (GetExtention((z.getName())) == "png")
-            overridefile << z.readAsBinary();
-        else
-            overridefile << z.readAsText();
+        zip_file_t *zippedFile = zip_fopen(zf, name.c_str(), 0);
+        zip_stat_t entryStat; zip_stat(zf, name.c_str(), 0, &entryStat);
+        void *buf = malloc(entryStat.size + 1);
+
+        zip_fread(zippedFile, buf, entryStat.size);
+        overrideFile.write((const char*)buf, entryStat.size);
+        printf("%s\n", entryStat.name);
+        free(buf);
     }
     printf("Creating MultiMc Profile...\n");
 
@@ -194,7 +223,7 @@ int main (int argc, char *argv[])
 }\0", Modpack.MCVersion.c_str(), Modpack.ModLoader.c_str(), Modpack.ModLoaderVersion.c_str() );
     mmcJsonFile << mmcPackJson;
 
-    zf->close();
+    zip_close(zf);
     printf("Done!\n");
     return EXIT_SUCCESS;
 }

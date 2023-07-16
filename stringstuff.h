@@ -56,6 +56,21 @@ static fs::path RemoveXLeadingFolders(int x , fs::path path)
     return newstring;
 }
 
+static fs::path RemoveXTrailingFolders(int x, fs::path path)
+{
+    if (x <= 0)
+        return path;
+
+    for (int i = path.string().length(); i > 0; i--)
+    {
+        if (path.string()[i] == '/')
+            x--;
+        if (x == 0)
+            return GetFirstXChars(i , path.string());
+    }
+    return path.string();
+}
+
 static std::vector<std::string> Split(std::string stringin, char splitter)
 {
     std::string concat;
