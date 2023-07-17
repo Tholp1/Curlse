@@ -95,7 +95,11 @@ static int DownloadMod(Mod mod, fs::path path, CURL *curl)
         url += mod.JarName;
     }
     else
+    {
         url = mod.DownloadUrl;
+        std::vector<std::string> jarname = Split(mod.DownloadUrl, '/');
+        mod.JarName = jarname.back();
+    }
 
     url = ReplaceChar(url, ' ', "%20");
 
@@ -104,7 +108,6 @@ static int DownloadMod(Mod mod, fs::path path, CURL *curl)
     modPath += mod.JarName;
 
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, modPath.c_str());
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
 
     FILE *file = fopen(modPath.c_str(), "w");
