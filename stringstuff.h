@@ -71,16 +71,18 @@ static fs::path RemoveXTrailingFolders(int x, fs::path path)
     return path.string();
 }
 
-static std::vector<std::string> Split(std::string stringin, char splitter)
+static std::vector<std::string> Split(std::string stringin, char splitter, int num = 0)//0 for all instances
 {
     std::string concat;
     std::vector<std::string> vec;
+    int times = 0;
     for (char c : stringin)
     {
-        if (c == splitter)
+        if (c == splitter && (times != num || num <= 0))
         {
             vec.push_back(concat);
             concat = "";
+            times++;
             continue;
         }
         concat += c;

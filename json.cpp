@@ -44,22 +44,27 @@ static bool ParseManifest(std::string &JsonString, ModPack &Pack)
 	Pack.MCVersion	= Json["minecraft"]["version"].asString();
 
 	std::string modloaderstr	= Json["minecraft"]["modLoaders"][0]["id"].asString();
-    std::vector<std::string> vec = Split(modloaderstr, '-');
+    std::vector<std::string> vec = Split(modloaderstr, '-', 1);
 
-	if(!strcmp(vec[0].c_str(), "forge"))
+    if(vec[0] == "forge")
 	{
 		Pack.ModLoader = "net.minecraftforge";
 	}
-	else if (!strcmp(vec[0].c_str(), "fabric"))
+    else if (vec[0] == "fabric")
 	{
 		Pack.ModLoader = "net.fabricmc.fabric-loader";
 	}
+    else if (vec[0] == "neoforge")
+    {
+        Pack.ModLoader = "net.neoforged";
+    }
 	else
 	{
-		printf("Unrecognized modloader, aborting.");
+        printf("Unrecognized modloader (%s), aborting.", vec[0].c_str());
 		return false;
 	}
-	Pack.ModLoaderVersion = vec[1];
+
+    Pack.ModLoaderVersion = vec[1];
 
 	return true;
 }

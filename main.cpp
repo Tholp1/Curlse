@@ -17,7 +17,6 @@ namespace fs = std::filesystem;
 
 int main (int argc, char *argv[])
 {
-    printf("Curlse");
     if (argc < 3)
     {
         printf("USAGE: curlse [pack manifest zip] [multimc instance folder]\n\n");
@@ -44,23 +43,6 @@ int main (int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    //this is some bullshit
-    //have to create a file stream of the zip and create a libzippp class from that because the standard way doesnt work...
-
-//    std::ifstream zip(file.lexically_normal().string(), std::ios::binary);//| std::ios::ate);
-//    zip.unsetf(std::ios::skipws);
-//    zip.seekg(0, std::ios::end);
-//    std::streamsize size = zip.tellg();
-//    zip.seekg(0, std::ios::beg);
-//    std::vector<char> buffer(size);
-
-//    if (!zip.read(buffer.data(), size))
-//    {
-//        printf("File read error!!\n");
-//        return EXIT_FAILURE;
-//    }
-
-    //zippp::ZipArchive *zf = zippp::ZipArchive::fromBuffer(buffer.data(), size);
     int err;
     zip_t *zf = zip_open(file.lexically_normal().string().c_str(), 0, &err);
 
@@ -82,7 +64,8 @@ int main (int argc, char *argv[])
         return EXIT_FAILURE;
     }
     
-    zip_stat_t manifestStat; zip_stat(zf, "manifest.json", 0, &manifestStat);
+    zip_stat_t manifestStat;
+    zip_stat(zf, "manifest.json", 0, &manifestStat);
     void *JsonBuf = malloc(manifestStat.size + 1);
     zip_fread(JsonEntry, JsonBuf, manifestStat.size);
 
